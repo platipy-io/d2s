@@ -1,13 +1,17 @@
 package main
 
 import (
-	"context"
-	"os"
+	"net/http"
 
 	"github.com/IxDay/templ-exp/templates"
 )
 
 func main() {
-	component := templates.Hello("John")
-	component.Render(context.Background(), os.Stdout)
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		component := templates.Hello("John")
+		component.Render(r.Context(), w)
+	})
+
+	http.ListenAndServe(":8080", nil)
 }
