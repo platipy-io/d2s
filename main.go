@@ -1,9 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"os"
+
+	"github.com/IxDay/templ-exp/templates"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
+	component := templates.Hello("John")
+	component.Render(context.Background(), os.Stdout)
 }
