@@ -9,7 +9,7 @@ import (
 func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		component := templates.Hello("John")
+		component := templates.Base(templates.Hello("John"))
 		component.Render(r.Context(), w)
 	})
 
