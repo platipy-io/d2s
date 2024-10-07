@@ -1,0 +1,37 @@
+project = "templ"
+project_dir = File.dirname(__FILE__)
+build_file = :"#{File.join %w[out templ]}"
+
+docker = ENV["DOCKER"] || "docker"
+
+task default: [:build]
+
+desc "Run shellcheck against shell files"
+task :"test:shellcheck" do
+  sh "shellcheck .envrc"
+end
+
+desc "Run editorconfig checks"
+task :"test:editorconfig" do
+  sh "ec"
+end
+
+desc "Run all unit tests"
+task test: %i[test:shellcheck test:editorconfig]
+
+directory "out"
+
+desc "Build the binary of the project"
+task build: [build_file]
+
+file "main.go"
+file build_file => ["main.go", "out"] do |t|
+  sh "go build -ldflags '-s -w' -o #{t.name} main.go"
+end
+
+desc "Clean up generated files"
+task :clean do
+  walk("out") do |entry|
+    File.directory?(entry) ? Dir.delete(entry) : File.delete(entry)
+  end
+end
