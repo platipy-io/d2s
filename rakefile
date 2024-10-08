@@ -22,10 +22,10 @@ task test: %i[test:shellcheck test:editorconfig]
 directory "out"
 
 desc "Build the binary of the project"
-task build: [build_file]
+task build: [:generate, build_file]
 
 file build_file => ["main.go", "out"] do |t|
-  sh "go build -ldflags '-s -w' -o #{t.name} main.go"
+  sh "go build -ldflags '-s -w' -o #{t.name} #{t.prerequisites.first}"
 end
 
 desc "Generate template files"
