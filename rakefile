@@ -28,6 +28,13 @@ file build_file => ["main.go", "out"] do |t|
   sh "go build -ldflags '-s -w' -o #{t.name} main.go"
 end
 
+desc "Generate template files"
+task generate: ["_templ.go"]
+
+rule "_templ.go" => ".templ" do |t|
+  sh "templ generate -f #{t.prerequisites.first}"
+end
+
 desc "Clean up generated files"
 task :clean do
   walk("out") do |entry|
