@@ -24,7 +24,6 @@ directory "out"
 desc "Build the binary of the project"
 task build: [build_file]
 
-file "main.go"
 file build_file => ["main.go", "out"] do |t|
   sh "go build -ldflags '-s -w' -o #{t.name} main.go"
 end
