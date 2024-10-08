@@ -1,0 +1,10 @@
+[build]
+cmd = "mrake"
+include_ext = ["go", "templ"]
+exclude_regex = ["_templ.go"]
+
+[proxy]
+# Enable live-reloading on the browser.
+enabled = true
+proxy_port = 8090
+app_port = 8080

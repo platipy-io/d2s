@@ -35,6 +35,11 @@ rule "_templ.go" => ".templ" do |t|
   sh "templ generate -f #{t.prerequisites.first}"
 end
 
+desc "Watch source code and rebuild/reload"
+task :watch do
+  sh "air --build.bin #{build_file} --tmp_dir #{File.dirname(build_file.to_s)}"
+end
+
 desc "Clean up generated files"
 task :clean do
   walk("out") do |entry|
