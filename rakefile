@@ -1,6 +1,6 @@
 project = "templ"
 project_dir = File.dirname(__FILE__)
-build_file = :"#{File.join %w[out templ]}"
+build_file = :"#{File.join %w[out server]}"
 
 docker = ENV["DOCKER"] || "docker"
 
