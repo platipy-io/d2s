@@ -8,10 +8,12 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/mdobak/go-xerrors"
+
 	"github.com/IxDay/templ-exp/app"
 	"github.com/IxDay/templ-exp/app/lorem"
 	"github.com/IxDay/templ-exp/internal/logger"
-	"github.com/mdobak/go-xerrors"
 )
 
 var timeout = 30 * time.Second
@@ -19,8 +21,8 @@ var ErrStarting = xerrors.Message("failed starting")
 var ErrStopping = xerrors.Message("failed stopping")
 
 func ListenAndServe(logger logger.Logger) error {
-	mux := http.NewServeMux()
-	server := http.Server{Addr: ":8080", Handler: mux}
+	router := chi.NewRouter()
+	server := http.Server{Addr: ":8080", Handler: router}
 	errChan := make(chan error)
 
 	go func() {
@@ -33,20 +35,19 @@ func ListenAndServe(logger logger.Logger) error {
 		cancel()
 		close(errChan)
 	}()
-	wrapper := func(handler http.HandlerFunc) http.Handler {
-		return MiddlewareLogger(logger)(MiddlewareRecover(http.HandlerFunc(handler)))
-	}
-	mux.Handle("/", wrapper(app.Index))
-	mux.Handle("/lorem", wrapper(lorem.Index))
-	mux.Handle("/panic", wrapper(func(w http.ResponseWriter, r *http.Request) {
+	router.Use(MiddlewareLogger(logger), MiddlewareRecover)
+
+	router.HandleFunc("/", app.Index)
+	router.HandleFunc("/lorem", lorem.Index)
+	router.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("I'm about to panic!")) // this will send a response 200 as we write to resp
 		panic("some unknown reason")
-	}))
-	mux.Handle("/wait", wrapper(func(w http.ResponseWriter, r *http.Request) {
+	})
+	router.HandleFunc("/wait", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("starting wait\n"))
 		time.Sleep(10 * time.Second)
 		w.Write([]byte("ending wait\n"))
-	}))
+	})
 	logger.Info().Msgf("starting server on: %s", server.Addr)
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return xerrors.New(ErrStarting, err)
