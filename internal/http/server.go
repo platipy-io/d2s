@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/heptiolabs/healthcheck"
 	"github.com/mdobak/go-xerrors"
 
 	"github.com/IxDay/templ-exp/app"
@@ -24,6 +25,7 @@ func ListenAndServe(logger logger.Logger) error {
 	router := chi.NewRouter()
 	server := http.Server{Addr: ":8080", Handler: router}
 	errChan := make(chan error)
+	health := healthcheck.NewHandler()
 
 	go func() {
 		sigint := make(chan os.Signal, 1)
@@ -35,19 +37,24 @@ func ListenAndServe(logger logger.Logger) error {
 		cancel()
 		close(errChan)
 	}()
-	router.Use(MiddlewareLogger(logger), MiddlewareRecover)
+	router.HandleFunc("/live", health.LiveEndpoint)
+	router.HandleFunc("/ready", health.ReadyEndpoint)
 
-	router.HandleFunc("/", app.Index)
-	router.HandleFunc("/lorem", lorem.Index)
-	router.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("I'm about to panic!")) // this will send a response 200 as we write to resp
-		panic("some unknown reason")
+	router.Route("/", func(r chi.Router) {
+		r.Use(MiddlewareLogger(logger), MiddlewareRecover)
+		r.HandleFunc("/", app.Index)
+		r.HandleFunc("/lorem", lorem.Index)
+		r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("I'm about to panic!")) // this will send a response 200 as we write to resp
+			panic("some unknown reason")
+		})
+		r.HandleFunc("/wait", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("starting wait\n"))
+			time.Sleep(10 * time.Second)
+			w.Write([]byte("ending wait\n"))
+		})
 	})
-	router.HandleFunc("/wait", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("starting wait\n"))
-		time.Sleep(10 * time.Second)
-		w.Write([]byte("ending wait\n"))
-	})
+
 	logger.Info().Msgf("starting server on: %s", server.Addr)
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return xerrors.New(ErrStarting, err)
