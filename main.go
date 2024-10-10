@@ -5,13 +5,22 @@ import (
 
 	"github.com/IxDay/templ-exp/app"
 	"github.com/IxDay/templ-exp/app/lorem"
+
+	http_ "github.com/IxDay/templ-exp/internal/http"
 	"github.com/IxDay/templ-exp/internal/logger"
 )
 
 func main() {
 	mux := http.NewServeMux()
 	log := logger.New(logger.TraceLevel)
-	mux.Handle("/", logger.Middleware(log)(http.HandlerFunc(app.Index)))
-	mux.Handle("/lorem", logger.Middleware(log)(http.HandlerFunc(lorem.Index)))
+	wrapper := func(handler http.HandlerFunc) http.Handler {
+		return http_.MiddlewareLogger(log)(http_.MiddlewareRecover(http.HandlerFunc(handler)))
+	}
+	mux.Handle("/", wrapper(app.Index))
+	mux.Handle("/lorem", wrapper(lorem.Index))
+	mux.Handle("/panic", wrapper(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("I'm about to panic!")) // this will send a response 200 as we write to resp
+		panic("some unknown reason")
+	}))
 	http.ListenAndServe(":8080", mux)
 }
