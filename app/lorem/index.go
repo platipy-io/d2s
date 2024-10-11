@@ -3,7 +3,7 @@ package lorem
 import (
 	"net/http"
 
-	"github.com/IxDay/templ-exp/app"
+	"github.com/platipy-io/d2s/app"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {

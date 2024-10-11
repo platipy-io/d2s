@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/IxDay/templ-exp/internal/telemetry"
+	"github.com/platipy-io/d2s/internal/telemetry"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
