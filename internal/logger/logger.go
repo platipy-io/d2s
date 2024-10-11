@@ -2,6 +2,8 @@ package logger
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -29,9 +31,18 @@ func Ctx(ctx context.Context) *Logger {
 }
 
 func New(level Level) Logger {
-	return zerolog.New(os.Stdout).Level(level).With().Timestamp().Logger()
+	writers := io.MultiWriter(NewOtelLogger("d2s"), os.Stdout)
+	return zerolog.New(writers).Level(level).With().Timestamp().Logger().Hook(SeverityHook{})
 }
 
 func init() {
 	zerolog.ErrorStackMarshaler = MarshalStack
+}
+
+type SeverityHook struct{}
+
+func (h SeverityHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	if level != zerolog.NoLevel {
+		fmt.Println("foooo")
+	}
 }
