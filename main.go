@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 
-	"github.com/IxDay/templ-exp/internal/http"
-	"github.com/IxDay/templ-exp/internal/logger"
+	"github.com/platipy-io/d2s/internal/http"
+	"github.com/platipy-io/d2s/internal/logger"
 )
 
 func main() {

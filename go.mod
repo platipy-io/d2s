@@ -1,4 +1,4 @@
-module github.com/IxDay/templ-exp
+module github.com/platipy-io/d2s
 
 go 1.22.2
 

@@ -12,9 +12,9 @@ import (
 	"github.com/heptiolabs/healthcheck"
 	"github.com/mdobak/go-xerrors"
 
-	"github.com/IxDay/templ-exp/app"
-	"github.com/IxDay/templ-exp/app/lorem"
-	"github.com/IxDay/templ-exp/internal/logger"
+	"github.com/platipy-io/d2s/app"
+	"github.com/platipy-io/d2s/app/lorem"
+	"github.com/platipy-io/d2s/internal/logger"
 )
 
 var timeout = 30 * time.Second
