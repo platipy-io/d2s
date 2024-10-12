@@ -4,11 +4,11 @@ import (
 	"errors"
 
 	"github.com/platipy-io/d2s/internal/http"
-	"github.com/platipy-io/d2s/internal/logger"
+	"github.com/platipy-io/d2s/internal/log"
 )
 
 func main() {
-	logger := logger.New(logger.TraceLevel)
+	logger := log.New(log.TraceLevel)
 	err := http.ListenAndServe(logger)
 
 	if errors.Is(err, http.ErrStopping) {

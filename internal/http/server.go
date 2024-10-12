@@ -14,14 +14,14 @@ import (
 
 	"github.com/platipy-io/d2s/app"
 	"github.com/platipy-io/d2s/app/lorem"
-	"github.com/platipy-io/d2s/internal/logger"
+	"github.com/platipy-io/d2s/internal/log"
 )
 
 var timeout = 30 * time.Second
 var ErrStarting = xerrors.Message("failed starting")
 var ErrStopping = xerrors.Message("failed stopping")
 
-func ListenAndServe(logger logger.Logger) error {
+func ListenAndServe(logger log.Logger) error {
 	router := chi.NewRouter()
 	server := http.Server{Addr: ":8080", Handler: router}
 	errChan := make(chan error)
