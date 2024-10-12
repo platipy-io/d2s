@@ -31,6 +31,11 @@ This means that a certain number of prerequisite have to be met:
 This ease the debugging process by simplifying the build phase
 (no build container + remote debug anymore)
 
+Decision logs
+-------------
+
+**Why not slog, why not zerolog?**
+
 Development
 -----------
 

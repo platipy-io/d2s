@@ -12,8 +12,8 @@ func main() {
 	err := http.ListenAndServe(logger)
 
 	if errors.Is(err, http.ErrStopping) {
-		logger.Error().Stack().Err(err).Msg("failed to stop server")
+		logger.Error("failed to stop server")
 	} else if errors.Is(err, http.ErrStarting) {
-		logger.Fatal().Stack().Err(err).Msg("failed to start server")
+		logger.Fatal("failed to start server")
 	}
 }

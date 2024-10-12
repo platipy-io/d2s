@@ -4,34 +4,36 @@ import (
 	"context"
 	"os"
 
-	"github.com/rs/zerolog"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type (
-	Level  = zerolog.Level
-	Logger = zerolog.Logger
+	Level  = zapcore.Level
+	Logger = zap.Logger
+	key    struct{}
 )
 
 const (
-	DebugLevel = zerolog.DebugLevel
-	InfoLevel  = zerolog.InfoLevel
-	WarnLevel  = zerolog.WarnLevel
-	ErrorLevel = zerolog.ErrorLevel
-	FatalLevel = zerolog.FatalLevel
-	PanicLevel = zerolog.PanicLevel
-	NoLevel    = zerolog.NoLevel
-	Disabled   = zerolog.Disabled
-	TraceLevel = zerolog.TraceLevel
+	TraceLevel = zapcore.Level(-2)
+	DebugLevel = zap.DebugLevel
+	InfoLevel  = zap.InfoLevel
+	WarnLevel  = zap.WarnLevel
+	ErrorLevel = zap.ErrorLevel
 )
 
 func Ctx(ctx context.Context) *Logger {
-	return zerolog.Ctx(ctx)
+	return ctx.Value(key{}).(*Logger)
 }
 
-func New(level Level) Logger {
-	return zerolog.New(os.Stdout).Level(level).With().Timestamp().Logger()
+func WithCtx(ctx context.Context, logger *Logger) context.Context {
+	return context.WithValue(ctx, key{}, logger)
 }
 
-func init() {
-	zerolog.ErrorStackMarshaler = MarshalStack
+func New(level Level) *Logger {
+	return zap.New(zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(os.Stdout),
+		level,
+	))
 }

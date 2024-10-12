@@ -21,7 +21,7 @@ var timeout = 30 * time.Second
 var ErrStarting = xerrors.Message("failed starting")
 var ErrStopping = xerrors.Message("failed stopping")
 
-func ListenAndServe(logger log.Logger) error {
+func ListenAndServe(logger *log.Logger) error {
 	router := chi.NewRouter()
 	server := http.Server{Addr: ":8080", Handler: router}
 	errChan := make(chan error)
@@ -31,7 +31,7 @@ func ListenAndServe(logger log.Logger) error {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
-		logger.Info().Msg("received interrupt, closing server...")
+		logger.Info("received interrupt, closing server...")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		errChan <- xerrors.New(server.Shutdown(ctx))
 		cancel()
@@ -41,7 +41,7 @@ func ListenAndServe(logger log.Logger) error {
 	router.HandleFunc("/ready", health.ReadyEndpoint)
 
 	router.Route("/", func(r chi.Router) {
-		r.Use(MiddlewareLogger(logger), MiddlewareRecover, MiddlewareOpenTelemetry)
+		r.Use(MiddlewareOpenTelemetry, MiddlewareLogger(logger), MiddlewareRecover)
 		r.HandleFunc("/", app.Index)
 		r.HandleFunc("/lorem", lorem.Index)
 		r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
@@ -55,13 +55,13 @@ func ListenAndServe(logger log.Logger) error {
 		})
 	})
 
-	logger.Info().Msgf("starting server on: %s", server.Addr)
+	logger.Info("starting server on: " + server.Addr)
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return xerrors.New(ErrStarting, err)
 	}
 	if err := xerrors.WithWrapper(ErrStopping, <-errChan); err != nil {
 		return err
 	}
-	logger.Info().Msg("server stopped properly")
+	logger.Info("server stopped properly")
 	return nil
 }

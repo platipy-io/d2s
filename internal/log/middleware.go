@@ -1,67 +1,38 @@
 package log
 
 import (
-	"bytes"
-	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/platipy-io/d2s/internal/http/mutil"
 	"github.com/rs/xid"
-	"github.com/rs/zerolog"
+
+	"go.uber.org/zap"
 )
 
-func mustRead(reader io.Reader) []byte {
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
-}
-
-func middleware(logger zerolog.Logger, next http.Handler) http.Handler {
+func middleware(logger *Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lw := mutil.WrapWriter(w)
-		child := logger.With().Str("req_id", xid.New().String()).Logger()
-		child.
-			Info().
-			Str("method", r.Method).
-			Str("url", r.URL.Path).
-			Str("user_agent", r.UserAgent()).
-			Msg("starting request")
+		child := logger.With(zap.String("req_id", xid.New().String()))
+		child.Info("starting request",
+			zap.String("method", r.Method),
+			zap.String("url", r.URL.Path),
+			zap.String("user_agent", r.UserAgent()))
 		defer func() {
-			child.
-				Info().
-				Int("status", lw.Status()).
-				Int("size", lw.BytesWritten()).
-				Dur("elapsed_ms", time.Since(start)).
-				Msg("ending request")
+			child.Info("ending request",
+				zap.Int("status", lw.Status()),
+				zap.Int("size", lw.BytesWritten()),
+				zap.Duration("elapsed_ms", time.Since(start)))
 		}()
 		if r.ContentLength != 0 {
-			child.
-				Trace().
-				Func(func(e *zerolog.Event) {
-					e.Dict("headers", RequestHeaders(r.Header))
-					body := mustRead(r.Body)
-					r.Body = io.NopCloser(bytes.NewBuffer(body))
-					if len(body) == 0 {
-						return
-					}
-					if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-						e.RawJSON("body", body)
-					} else {
-						e.Bytes("body", body)
-					}
-				}).Msg("dumping request")
+			child.Log(TraceLevel, "dumping request", zap.Inline(Request(r)))
 		}
-
-		next.ServeHTTP(lw, r.WithContext(child.WithContext(r.Context())))
+		next.ServeHTTP(lw, r.WithContext(WithCtx(r.Context(), child)))
 	})
 }
 
-func Middleware(logger zerolog.Logger) func(http.Handler) http.Handler {
+func Middleware(logger *Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return middleware(logger, next)
 	}
