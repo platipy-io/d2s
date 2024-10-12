@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platipy-io/d2s/internal/http/mutil"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/hlog"
 )
 
 func mustRead(reader io.Reader) []byte {
@@ -22,6 +22,8 @@ func mustRead(reader io.Reader) []byte {
 
 func middleware(logger zerolog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		lw := mutil.WrapWriter(w)
 		child := logger.With().Str("req_id", xid.New().String()).Logger()
 		child.
 			Info().
@@ -29,6 +31,14 @@ func middleware(logger zerolog.Logger, next http.Handler) http.Handler {
 			Str("url", r.URL.Path).
 			Str("user_agent", r.UserAgent()).
 			Msg("starting request")
+		defer func() {
+			child.
+				Info().
+				Int("status", lw.Status()).
+				Int("size", lw.BytesWritten()).
+				Dur("elapsed_ms", time.Since(start)).
+				Msg("ending request")
+		}()
 		if r.ContentLength != 0 {
 			child.
 				Trace().
@@ -47,14 +57,7 @@ func middleware(logger zerolog.Logger, next http.Handler) http.Handler {
 				}).Msg("dumping request")
 		}
 
-		hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
-			child.
-				Info().
-				Int("status", status).
-				Int("size", size).
-				Dur("elapsed_ms", duration).
-				Msg("ending request")
-		})(next).ServeHTTP(w, r.WithContext(child.WithContext(r.Context())))
+		next.ServeHTTP(lw, r.WithContext(child.WithContext(r.Context())))
 	})
 }
 
