@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"go.opentelemetry.io/otel/log/global"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -31,9 +33,10 @@ func WithCtx(ctx context.Context, logger *Logger) context.Context {
 }
 
 func New(level Level) *Logger {
-	return zap.New(zapcore.NewCore(
-		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
-		zapcore.AddSync(os.Stdout),
-		level,
-	))
+	provider := global.GetLoggerProvider()
+	core := zapcore.NewTee(
+		zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(os.Stdout), level),
+		otelzap.NewCore("d2s", otelzap.WithLoggerProvider(provider)),
+	)
+	return zap.New(core)
 }

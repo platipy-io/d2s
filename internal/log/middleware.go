@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/platipy-io/d2s/internal/http/mutil"
-	"github.com/rs/xid"
-
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -14,7 +13,11 @@ func middleware(logger *Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lw := mutil.WrapWriter(w)
-		child := logger.With(zap.String("req_id", xid.New().String()))
+		span := trace.SpanFromContext(r.Context())
+		child := logger.With(
+			zap.String("span_id", span.SpanContext().SpanID().String()),
+			zap.String("trace_id", span.SpanContext().TraceID().String()),
+		)
 		child.Info("starting request",
 			zap.String("method", r.Method),
 			zap.String("url", r.URL.Path),
