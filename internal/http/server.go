@@ -14,14 +14,14 @@ import (
 
 	"github.com/platipy-io/d2s/app"
 	"github.com/platipy-io/d2s/app/lorem"
-	"github.com/platipy-io/d2s/internal/logger"
+	"github.com/platipy-io/d2s/internal/log"
 )
 
 var timeout = 30 * time.Second
 var ErrStarting = xerrors.Message("failed starting")
 var ErrStopping = xerrors.Message("failed stopping")
 
-func ListenAndServe(logger logger.Logger) error {
+func ListenAndServe(logger *log.Logger) error {
 	router := chi.NewRouter()
 	server := http.Server{Addr: ":8080", Handler: router}
 	errChan := make(chan error)
@@ -31,7 +31,7 @@ func ListenAndServe(logger logger.Logger) error {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
-		logger.Info().Msg("received interrupt, closing server...")
+		logger.Info("received interrupt, closing server...")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		errChan <- xerrors.New(server.Shutdown(ctx))
 		cancel()
@@ -55,13 +55,13 @@ func ListenAndServe(logger logger.Logger) error {
 		})
 	})
 
-	logger.Info().Msgf("starting server on: %s", server.Addr)
+	logger.Info("starting server on: " + server.Addr)
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return xerrors.New(ErrStarting, err)
 	}
 	if err := xerrors.WithWrapper(ErrStopping, <-errChan); err != nil {
 		return err
 	}
-	logger.Info().Msg("server stopped properly")
+	logger.Info("server stopped properly")
 	return nil
 }
