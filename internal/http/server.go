@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -21,11 +22,63 @@ var timeout = 30 * time.Second
 var ErrStarting = xerrors.Message("failed starting")
 var ErrStopping = xerrors.Message("failed stopping")
 
-func ListenAndServe(logger *log.Logger) error {
+type serverConfig struct {
+	host   string
+	port   int
+	logger *log.Logger
+}
+
+func (sc serverConfig) addr() string {
+	return sc.host + ":" + strconv.Itoa(sc.port)
+}
+
+// ServerOption applies a configuration option value to a Server.
+type ServerOption interface {
+	apply(serverConfig) serverConfig
+}
+
+type ServerOptionFunc func(serverConfig) serverConfig
+
+func (fn ServerOptionFunc) apply(c serverConfig) serverConfig {
+	return fn(c)
+}
+
+func newServerConfig(opts []ServerOption) serverConfig {
+	sc := serverConfig{port: 8080, logger: log.Nop()}
+	for _, opt := range opts {
+		sc = opt.apply(sc)
+	}
+	return sc
+}
+
+func WithHost(host string) ServerOption {
+	return ServerOptionFunc(func(sc serverConfig) serverConfig {
+		sc.host = host
+		return sc
+	})
+}
+
+func WithLogger(logger *log.Logger) ServerOption {
+	return ServerOptionFunc(func(sc serverConfig) serverConfig {
+		sc.logger = logger
+		return sc
+	})
+}
+
+func WithPort(port int) ServerOption {
+	return ServerOptionFunc(func(sc serverConfig) serverConfig {
+		sc.port = port
+		return sc
+	})
+}
+
+func ListenAndServe(opts ...ServerOption) error {
 	router := chi.NewRouter()
-	server := http.Server{Addr: ":8080", Handler: router}
 	errChan := make(chan error)
 	health := healthcheck.NewHandler()
+	config := newServerConfig(opts)
+	logger := config.logger
+	server := http.Server{Addr: config.addr(), Handler: router}
 
 	go func() {
 		sigint := make(chan os.Signal, 1)

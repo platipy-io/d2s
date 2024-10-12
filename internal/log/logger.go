@@ -40,3 +40,7 @@ func New(level Level) *Logger {
 	)
 	return zap.New(core)
 }
+
+func Nop() *Logger {
+	return zap.NewNop()
+}

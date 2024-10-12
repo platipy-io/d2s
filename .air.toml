@@ -1,5 +1,6 @@
 [build]
 cmd = "mrake"
+args_bin = ["--dev"]
 include_ext = ["go", "templ"]
 exclude_regex = ["_templ.go"]
 
