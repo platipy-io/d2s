@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 
 	"github.com/platipy-io/d2s/internal/http"
@@ -9,12 +8,12 @@ import (
 )
 
 func main() {
-	logger := log.New(log.LevelTrace)
+	logger := log.New(log.TraceLevel)
 	err := http.ListenAndServe(logger)
 
 	if errors.Is(err, http.ErrStopping) {
 		logger.Error("failed to stop server")
 	} else if errors.Is(err, http.ErrStarting) {
-		logger.Log(context.TODO(), log.LevelFatal, "failed to start server")
+		logger.Fatal("failed to start server")
 	}
 }

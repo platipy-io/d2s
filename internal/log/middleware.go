@@ -1,58 +1,38 @@
 package log
 
 import (
-	"io"
-	"log/slog"
 	"net/http"
+	"time"
 
-	"github.com/rs/xid"
+	"github.com/platipy-io/d2s/internal/http/mutil"
+
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
-
-func mustRead(reader io.Reader) []byte {
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
-}
 
 func middleware(logger *Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		child := logger.With(slog.String("req_id", xid.New().String()))
+		start := time.Now()
+		lw := mutil.WrapWriter(w)
+		span := trace.SpanFromContext(r.Context())
+		child := logger.With(
+			zap.String("span_id", span.SpanContext().SpanID().String()),
+			zap.String("trace_id", span.SpanContext().TraceID().String()),
+		)
 		child.Info("starting request",
-			slog.String("method", r.Method),
-			slog.String("url", r.URL.Path),
-			slog.String("user_agent", r.UserAgent()))
+			zap.String("method", r.Method),
+			zap.String("url", r.URL.Path),
+			zap.String("user_agent", r.UserAgent()))
+		defer func() {
+			child.Info("ending request",
+				zap.Int("status", lw.Status()),
+				zap.Int("size", lw.BytesWritten()),
+				zap.Duration("elapsed_ms", time.Since(start)))
+		}()
 		if r.ContentLength != 0 {
-			// child.
-			// 	Trace().
-			// 	Func(func(e *zerolog.Event) {
-			// 		e.Dict("headers", RequestHeaders(r.Header))
-			// 		body := mustRead(r.Body)
-			// 		r.Body = io.NopCloser(bytes.NewBuffer(body))
-			// 		if len(body) == 0 {
-			// 			return
-			// 		}
-			// 		if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-			// 			e.RawJSON("body", body)
-			// 		} else {
-			// 			e.Bytes("body", body)
-			// 		}
-			// 	}).Msg("dumping request")
+			child.Log(TraceLevel, "dumping request", zap.Inline(Request(r)))
 		}
-		child.Info("ending request",
-			slog.String("method", r.Method),
-			slog.String("url", r.URL.Path),
-			slog.String("user_agent", r.UserAgent()))
-		next.ServeHTTP(w, r.WithContext(WithCtx(r.Context(), logger)))
-		// hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
-		// 	child.
-		// 		Info().
-		// 		Int("status", status).
-		// 		Int("size", size).
-		// 		Dur("elapsed_ms", duration).
-		// 		Msg("ending request")
-		// })(next).ServeHTTP(w, r.WithContext(child.WithContext(r.Context())))
+		next.ServeHTTP(lw, r.WithContext(WithCtx(r.Context(), child)))
 	})
 }
 

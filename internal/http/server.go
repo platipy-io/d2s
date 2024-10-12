@@ -41,7 +41,7 @@ func ListenAndServe(logger *log.Logger) error {
 	router.HandleFunc("/ready", health.ReadyEndpoint)
 
 	router.Route("/", func(r chi.Router) {
-		r.Use(MiddlewareLogger(logger), MiddlewareRecover, MiddlewareOpenTelemetry)
+		r.Use(MiddlewareOpenTelemetry, MiddlewareLogger(logger), MiddlewareRecover)
 		r.HandleFunc("/", app.Index)
 		r.HandleFunc("/lorem", lorem.Index)
 		r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {

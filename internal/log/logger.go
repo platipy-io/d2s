@@ -2,24 +2,26 @@ package log
 
 import (
 	"context"
-	"log/slog"
 	"os"
+
+	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"go.opentelemetry.io/otel/log/global"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type (
-	Level  = slog.Level
-	Logger = slog.Logger
-	key    = struct{}
+	Level  = zapcore.Level
+	Logger = zap.Logger
+	key    struct{}
 )
 
 const (
-	LevelDebug = slog.LevelDebug
-	LevelInfo  = slog.LevelInfo
-	LevelWarn  = slog.LevelWarn
-	LevelError = slog.LevelError
-	LevelFatal = slog.Level(5)
-	LevelPanic = slog.Level(6)
-	LevelTrace = slog.Level(-5)
+	TraceLevel = zapcore.Level(-2)
+	DebugLevel = zap.DebugLevel
+	InfoLevel  = zap.InfoLevel
+	WarnLevel  = zap.WarnLevel
+	ErrorLevel = zap.ErrorLevel
 )
 
 func Ctx(ctx context.Context) *Logger {
@@ -31,9 +33,10 @@ func WithCtx(ctx context.Context, logger *Logger) context.Context {
 }
 
 func New(level Level) *Logger {
-	// writers := io.MultiWriter(NewOtelLogger("d2s"), os.Stdout)
-	// return zerolog.New(writers).Level(level).With().Timestamp().Logger().Hook(SeverityHook{})
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: level,
-	}))
+	provider := global.GetLoggerProvider()
+	core := zapcore.NewTee(
+		zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(os.Stdout), level),
+		otelzap.NewCore("d2s", otelzap.WithLoggerProvider(provider)),
+	)
+	return zap.New(core)
 }
