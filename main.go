@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/platipy-io/d2s/config"
 	"github.com/platipy-io/d2s/internal/http"
 	"github.com/platipy-io/d2s/internal/log"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -21,14 +23,16 @@ var (
 			return run()
 		},
 	}
-	dev  bool
-	port int
-	host string
+	flags *pflag.FlagSet
+	dev   bool
+	port  int
+	host  string
+	level config.LogLevel
 )
 
 func init() {
-	flags := command.PersistentFlags()
-
+	flags = command.PersistentFlags()
+	flags.Var(&level, "level", "Specify logger level; allowed: "+config.LogLevelsStr)
 	flags.StringVar(&host, "host", "", "Host to listen to")
 	flags.IntVar(&port, "port", 8080, "Port to listen to")
 	flags.BoolVar(&dev, "dev", false, "Activate dev mode")
@@ -42,12 +46,11 @@ func main() {
 }
 
 func run() error {
-	level := log.WarnLevel
-	if dev {
-		level = log.TraceLevel
+	if dev && !flags.Changed("level") {
+		level = config.LogLevel{Level: log.TraceLevel}
 	}
 
-	logger := log.New(level)
+	logger := log.New(level.Level)
 	err := http.ListenAndServe(http.WithLogger(logger), http.WithHost(host), http.WithPort(port))
 
 	if errors.Is(err, http.ErrStopping) {
