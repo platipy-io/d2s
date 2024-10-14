@@ -8,9 +8,17 @@ import (
 	"github.com/platipy-io/d2s/config"
 	"github.com/platipy-io/d2s/internal/http"
 	"github.com/platipy-io/d2s/internal/log"
+	"go.uber.org/zap"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+)
+
+const (
+	// DefaultConfigPath is the default location the application will use to
+	// find the configuration.
+	DefaultConfigPath = "d2s.toml"
 )
 
 var (
@@ -23,19 +31,22 @@ var (
 			return run()
 		},
 	}
-	flags *pflag.FlagSet
-	dev   bool
-	port  int
-	host  string
-	level config.LogLevel
+	flags    *pflag.FlagSet
+	logLevel = config.LogLevel{}
 )
 
 func init() {
 	flags = command.PersistentFlags()
-	flags.Var(&level, "level", "Specify logger level; allowed: "+config.LogLevelsStr)
-	flags.StringVar(&host, "host", "", "Host to listen to")
-	flags.IntVar(&port, "port", 8080, "Port to listen to")
-	flags.BoolVar(&dev, "dev", false, "Activate dev mode")
+	flags.Var(&logLevel, "level", "Specify logger level; allowed: "+config.LogLevelsStr)
+	flags.String("host", "", "Host to listen to")
+	flags.Int("port", 8080, "Port to listen to")
+	flags.Bool("dev", false, "Activate dev mode")
+	flags.String("config", DefaultConfigPath, "Path to a configuration file")
+
+	_ = viper.BindPFlag("host", flags.Lookup("host"))
+	_ = viper.BindPFlag("port", flags.Lookup("port"))
+	_ = viper.BindPFlag("dev", flags.Lookup("dev"))
+	_ = viper.BindPFlag("logger.level", flags.Lookup("level"))
 }
 
 func main() {
@@ -46,13 +57,20 @@ func main() {
 }
 
 func run() error {
-	if dev && !flags.Changed("level") {
-		level = config.LogLevel{Level: log.TraceLevel}
+	conf, err := config.New(DefaultConfigPath)
+	if err != nil {
+		return err
 	}
+	if conf.Dev && !flags.Changed("level") {
+		logLevel.Level = log.TraceLevel
+		conf.Logger.Level = logLevel.String()
+	}
+	logger := log.New(logLevel.Level)
+	logger.Debug("dumping config", zap.Any("config", conf))
+	opts := []http.ServerOption{http.WithLogger(logger),
+		http.WithHost(conf.Host), http.WithPort(conf.Port)}
 
-	logger := log.New(level.Level)
-	err := http.ListenAndServe(http.WithLogger(logger), http.WithHost(host), http.WithPort(port))
-
+	err = http.ListenAndServe(opts...)
 	if errors.Is(err, http.ErrStopping) {
 		logger.Error("failed to stop server")
 	} else if errors.Is(err, http.ErrStarting) {
