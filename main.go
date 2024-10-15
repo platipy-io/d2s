@@ -8,7 +8,6 @@ import (
 	"github.com/platipy-io/d2s/config"
 	"github.com/platipy-io/d2s/internal/http"
 	"github.com/platipy-io/d2s/internal/log"
-	"go.uber.org/zap"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -66,15 +65,15 @@ func run() error {
 		conf.Logger.Level = logLevel.String()
 	}
 	logger := log.New(logLevel.Level)
-	logger.Debug("dumping config", zap.Any("config", conf))
+	logger.Debug().Object("config", conf).Msg("dumping config")
 	opts := []http.ServerOption{http.WithLogger(logger),
 		http.WithHost(conf.Host), http.WithPort(conf.Port)}
 
 	err = http.ListenAndServe(opts...)
 	if errors.Is(err, http.ErrStopping) {
-		logger.Error("failed to stop server")
+		logger.Error().Msg("failed to stop server")
 	} else if errors.Is(err, http.ErrStarting) {
-		logger.Fatal("failed to start server")
+		logger.Fatal().Msg("failed to start server")
 	}
 	return err
 }

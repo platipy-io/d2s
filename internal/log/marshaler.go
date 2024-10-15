@@ -2,13 +2,17 @@ package log
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/rs/zerolog"
 	"go.uber.org/zap/zapcore"
 )
+
+type MarshalerFunc func(*zerolog.Event)
+
+func (mf MarshalerFunc) MarshalZerologObject(e *zerolog.Event) { mf(e) }
 
 func mustRead(reader io.Reader) []byte {
 	bytes, err := io.ReadAll(reader)
@@ -27,33 +31,31 @@ func StringArray(slice []string) zapcore.ArrayMarshaler {
 	})
 }
 
-func RequestHeaders(h http.Header) zapcore.ObjectMarshaler {
-	return zapcore.ObjectMarshalerFunc(func(oe zapcore.ObjectEncoder) error {
-		for k, v := range h {
-			if len(v) == 1 {
-				oe.AddString(k, v[0])
-			} else {
-				oe.AddArray(k, StringArray(v))
-			}
+func RequestHeaders(h http.Header) *zerolog.Event {
+	dict := zerolog.Dict()
+	for k, v := range h {
+		if len(v) == 1 {
+			dict.Str(k, v[0])
+		} else {
+			dict.Strs(k, v)
 		}
-		return nil
-	})
+	}
+	return dict
 }
 
-func Request(r *http.Request) zapcore.ObjectMarshaler {
-	return zapcore.ObjectMarshalerFunc(func(oe zapcore.ObjectEncoder) error {
-		oe.AddObject("headers", RequestHeaders(r.Header))
+func Request(r *http.Request) zerolog.LogObjectMarshaler {
+	return MarshalerFunc(func(e *zerolog.Event) {
+		e.Dict("headers", RequestHeaders(r.Header))
 		body := mustRead(r.Body)
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		if len(body) == 0 {
-			return nil
+			return
 		}
 		if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-			foo := json.RawMessage(body)
-			oe.AddReflected("body", &foo)
+			e.RawJSON("body", body)
 		} else {
-			oe.AddByteString("body", body)
+			e.Bytes("body", body)
 		}
-		return nil
 	})
+
 }

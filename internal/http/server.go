@@ -25,7 +25,7 @@ var ErrStopping = xerrors.Message("failed stopping")
 type serverConfig struct {
 	host   string
 	port   int
-	logger *log.Logger
+	logger log.Logger
 }
 
 func (sc serverConfig) addr() string {
@@ -58,7 +58,7 @@ func WithHost(host string) ServerOption {
 	})
 }
 
-func WithLogger(logger *log.Logger) ServerOption {
+func WithLogger(logger log.Logger) ServerOption {
 	return ServerOptionFunc(func(sc serverConfig) serverConfig {
 		sc.logger = logger
 		return sc
@@ -84,7 +84,7 @@ func ListenAndServe(opts ...ServerOption) error {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
-		logger.Info("received interrupt, closing server...")
+		logger.Info().Msg("received interrupt, closing server...")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		errChan <- xerrors.New(server.Shutdown(ctx))
 		cancel()
@@ -108,13 +108,13 @@ func ListenAndServe(opts ...ServerOption) error {
 		})
 	})
 
-	logger.Info("starting server on: " + server.Addr)
+	logger.Info().Msg("starting server on: " + server.Addr)
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return xerrors.New(ErrStarting, err)
 	}
 	if err := xerrors.WithWrapper(ErrStopping, <-errChan); err != nil {
 		return err
 	}
-	logger.Info("server stopped properly")
+	logger.Info().Msg("server stopped properly")
 	return nil
 }

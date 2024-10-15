@@ -3,12 +3,11 @@ package config
 import (
 	"strings"
 
-	"github.com/platipy-io/d2s/internal/log"
-	"go.uber.org/zap/zapcore"
+	"github.com/rs/zerolog"
 )
 
 type LogLevel struct {
-	zapcore.Level
+	zerolog.Level
 }
 
 func JoinQuoted(in []string, sep string) string {
@@ -30,17 +29,16 @@ func JoinQuoted(in []string, sep string) string {
 func (ll LogLevel) String() string { return ll.Level.String() }
 func (ll LogLevel) Type() string   { return "<level>" }
 func (ll *LogLevel) Set(v string) (err error) {
-	if v == "trace" {
-		ll.Level = log.TraceLevel
-	}
-	ll.Level, err = zapcore.ParseLevel(v)
+	ll.Level, err = zerolog.ParseLevel(v)
 	return
 }
 
 var LogLevelsStr = JoinQuoted([]string{
-	"trace",
-	log.DebugLevel.String(),
-	log.InfoLevel.String(),
-	log.WarnLevel.String(),
-	log.ErrorLevel.String(),
+	zerolog.LevelTraceValue,
+	zerolog.LevelDebugValue,
+	zerolog.LevelInfoValue,
+	zerolog.LevelWarnValue,
+	zerolog.LevelErrorValue,
+	zerolog.LevelFatalValue,
+	zerolog.LevelPanicValue,
 }, ", ")
