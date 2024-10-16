@@ -22,7 +22,7 @@ func MiddlewareRecover(next http.Handler) http.Handler {
 
 var MiddlewareLogger = log.Middleware
 
-var MiddlewareOpenTelemetry = otelhttp.NewMiddleware("fooo",
+var MiddlewareOpenTelemetry = otelhttp.NewMiddleware("",
 	otelhttp.WithTracerProvider(telemetry.Provider),
 	otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
 		return "server"
