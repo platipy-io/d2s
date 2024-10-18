@@ -5,6 +5,7 @@ import (
 
 	"github.com/platipy-io/d2s/internal/log"
 	"github.com/platipy-io/d2s/internal/telemetry"
+
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/mdobak/go-xerrors"
@@ -28,3 +29,5 @@ var MiddlewareOpenTelemetry = otelhttp.NewMiddleware("",
 		return "server"
 	}),
 )
+
+var MiddlewareMetrics = telemetry.MiddlewareMetrics()

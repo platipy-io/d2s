@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/heptiolabs/healthcheck"
 	"github.com/mdobak/go-xerrors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/platipy-io/d2s/app"
 	"github.com/platipy-io/d2s/app/lorem"
@@ -92,9 +93,10 @@ func ListenAndServe(opts ...ServerOption) error {
 	}()
 	router.HandleFunc("/live", health.LiveEndpoint)
 	router.HandleFunc("/ready", health.ReadyEndpoint)
+	router.Handle("/metrics", promhttp.Handler())
 
 	router.Route("/", func(r chi.Router) {
-		r.Use(MiddlewareOpenTelemetry, MiddlewareLogger(logger), MiddlewareRecover)
+		r.Use(MiddlewareOpenTelemetry, MiddlewareMetrics, MiddlewareLogger(logger), MiddlewareRecover)
 		r.HandleFunc("/", app.Index)
 		r.HandleFunc("/lorem", lorem.Index)
 		r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
