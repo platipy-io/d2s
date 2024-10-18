@@ -98,7 +98,7 @@ func ListenAndServe(opts ...ServerOption) error {
 		r.HandleFunc("/", app.Index)
 		r.HandleFunc("/lorem", lorem.Index)
 		r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("I'm about to panic!")) // this will send a response 200 as we write to resp
+			// w.Write([]byte("I'm about to panic!")) // this will send a response 200 as we write to resp
 			panic("some unknown reason")
 		})
 		r.HandleFunc("/wait", func(w http.ResponseWriter, r *http.Request) {
