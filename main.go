@@ -8,6 +8,8 @@ import (
 	"github.com/platipy-io/d2s/config"
 	"github.com/platipy-io/d2s/internal/http"
 	"github.com/platipy-io/d2s/internal/log"
+	"github.com/platipy-io/d2s/internal/telemetry"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -60,6 +62,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if err := telemetry.InitTrace("d2s", otlptracehttp.WithInsecure()); err != nil {
+		return err
+	}
+
 	if conf.Dev && !flags.Changed("level") {
 		logLevel.Level = log.TraceLevel
 		conf.Logger.Level = logLevel.String()

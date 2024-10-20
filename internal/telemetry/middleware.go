@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 var (
@@ -80,3 +81,5 @@ func MiddlewareMetrics() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(fn)
 	}
 }
+
+var MiddlewareTracing = otelhttp.NewMiddleware

@@ -6,8 +6,6 @@ import (
 	"github.com/platipy-io/d2s/internal/log"
 	"github.com/platipy-io/d2s/internal/telemetry"
 
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-
 	"github.com/mdobak/go-xerrors"
 )
 
@@ -23,11 +21,6 @@ func MiddlewareRecover(next http.Handler) http.Handler {
 
 var MiddlewareLogger = log.Middleware
 
-var MiddlewareOpenTelemetry = otelhttp.NewMiddleware("",
-	otelhttp.WithTracerProvider(telemetry.Provider),
-	otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
-		return "server"
-	}),
-)
+var MiddlewareOpenTelemetry = telemetry.MiddlewareTracing("server")
 
 var MiddlewareMetrics = telemetry.MiddlewareMetrics()
