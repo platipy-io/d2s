@@ -33,7 +33,7 @@ var (
 		},
 	}
 	flags    *pflag.FlagSet
-	logLevel = config.LogLevel{}
+	logLevel = config.LogLevel{Level: log.InfoLevel}
 )
 
 func init() {
