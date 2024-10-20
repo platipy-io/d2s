@@ -1,13 +1,13 @@
 package app
 
 templ IndexTplt(name string, wrapped templ.Component) {
-    <h1 class="text-3xl font-bold text-gray-800 text-center">Hello, { name }!</h1>
-    if wrapped != nil {
-        @wrapped
-    } else {
-        <a hx-get="/lorem" hx-push-url="true" class="font-medium text-blue-600 dark:text-blue-500 hover:underline cursor-pointer" hx-swap="outerHTML">
-            Go to Lorem
-        </a>
-    }
+	<h1 class="text-3xl font-bold text-gray-800 text-center">Hello, { name }!</h1>
+	if wrapped != nil {
+		@wrapped
+	} else {
+		<a hx-get="/lorem" hx-push-url="true" class="font-medium text-blue-600 dark:text-blue-500 hover:underline cursor-pointer" hx-swap="outerHTML">
+			Go to Lorem
+		</a>
+	}
 }
 
