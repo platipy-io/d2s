@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/rs/zerolog"
 )
 
@@ -10,8 +12,28 @@ func (c Configuration) MarshalZerologObject(e *zerolog.Event) {
 	e.Int("port", c.Port)
 
 	e.Object("logger", c.Logger)
+	e.Object("tracer", c.Tracer)
 }
 
-func (cl ConfigurationLogger) MarshalZerologObject(e *zerolog.Event) {
-	e.Str("level", cl.Level)
+func (l Logger) MarshalZerologObject(e *zerolog.Event) {
+	e.Str("level", l.Level)
+}
+
+var sensibleHeader = map[string]struct{}{"set-cookie": {}, "authorization": {}}
+
+func (t Tracer) MarshalZerologObject(e *zerolog.Event) {
+	if t.Endpoint != "" {
+		e.Str("endpoint", t.Endpoint)
+	}
+	if len(t.Headers) != 0 {
+		dict := zerolog.Dict()
+		for k, v := range t.Headers {
+			k = strings.ToLower(k)
+			if _, ok := sensibleHeader[k]; ok {
+				v = "*****"
+			}
+			dict.Str(k, v)
+		}
+		e.Dict("headers", dict)
+	}
 }
