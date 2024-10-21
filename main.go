@@ -31,6 +31,7 @@ var (
 			return run()
 		},
 	}
+	configs      = []string{}
 	logLevel     = config.LogLevel{Level: log.InfoLevel}
 	logLevelFlag *pflag.Flag
 )
@@ -40,7 +41,9 @@ func init() {
 	flags.String("host", "", "Host to listen to")
 	flags.Int("port", 8080, "Port to listen to")
 	flags.Bool("dev", false, "Activate dev mode")
-	flags.String("config", DefaultConfigPath, "Path to a configuration file")
+
+	flags.StringArrayVar(&configs, "config", []string{DefaultConfigPath},
+		"Path to a configuration file")
 
 	logLevelFlag = flags.VarPF(&logLevel, "level", "",
 		"Specify logger level; allowed: "+config.LogLevelsStr)
@@ -59,7 +62,7 @@ func main() {
 }
 
 func run() error {
-	conf, err := config.New(DefaultConfigPath)
+	conf, err := config.New(configs...)
 	if err != nil {
 		return err
 	}

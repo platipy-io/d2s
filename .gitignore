@@ -1,3 +1,4 @@
 /templates/*.go
 /out
-/d2s.toml
+/*.toml
+/!d2s.example.toml

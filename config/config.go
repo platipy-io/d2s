@@ -32,11 +32,14 @@ type (
 	}
 )
 
-func New(path string) (config Configuration, err error) {
-	viper.SetConfigFile(path)
-	if err = viper.ReadInConfig(); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return
+func New(paths ...string) (config Configuration, err error) {
+	for _, path := range paths {
+		viper.SetConfigFile(path)
+		if err = viper.MergeInConfig(); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return
+		}
 	}
+
 	err = viper.Unmarshal(&config)
 	return
 }
