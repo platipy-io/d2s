@@ -31,22 +31,24 @@ var (
 			return run()
 		},
 	}
-	flags    *pflag.FlagSet
-	logLevel = config.LogLevel{Level: log.InfoLevel}
+	logLevel     = config.LogLevel{Level: log.InfoLevel}
+	logLevelFlag *pflag.Flag
 )
 
 func init() {
-	flags = command.PersistentFlags()
-	flags.Var(&logLevel, "level", "Specify logger level; allowed: "+config.LogLevelsStr)
+	flags := command.PersistentFlags()
 	flags.String("host", "", "Host to listen to")
 	flags.Int("port", 8080, "Port to listen to")
 	flags.Bool("dev", false, "Activate dev mode")
 	flags.String("config", DefaultConfigPath, "Path to a configuration file")
 
+	logLevelFlag = flags.VarPF(&logLevel, "level", "",
+		"Specify logger level; allowed: "+config.LogLevelsStr)
+
 	_ = viper.BindPFlag("host", flags.Lookup("host"))
 	_ = viper.BindPFlag("port", flags.Lookup("port"))
 	_ = viper.BindPFlag("dev", flags.Lookup("dev"))
-	_ = viper.BindPFlag("logger.level", flags.Lookup("level"))
+	_ = viper.BindPFlag("logger.level", logLevelFlag)
 }
 
 func main() {
@@ -65,11 +67,8 @@ func run() error {
 		return err
 	}
 
-	if conf.Dev && !flags.Changed("level") {
-		logLevel.Level = log.TraceLevel
-		conf.Logger.Level = logLevel.String()
-	}
-	logger := log.New(logLevel.Level)
+	logger := conf.NewLogger(logLevel.Level, logLevelFlag.Changed)
+
 	logger.Debug().Object("config", conf).Msg("dumping config")
 	opts := []http.ServerOption{http.WithLogger(logger),
 		http.WithHost(conf.Host), http.WithPort(conf.Port)}

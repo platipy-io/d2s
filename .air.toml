@@ -3,6 +3,7 @@ cmd = "mrake"
 args_bin = ["--dev"]
 include_ext = ["go", "templ"]
 exclude_regex = ["_templ.go"]
+include_file = ["d2s.toml"]
 
 [proxy]
 # Enable live-reloading on the browser.

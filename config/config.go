@@ -2,8 +2,12 @@ package config
 
 import (
 	"errors"
+	"io"
 	"os"
+	"time"
 
+	"github.com/platipy-io/d2s/internal/log"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
@@ -45,4 +49,21 @@ func (t Tracer) Opts() (opts []otlptracehttp.Option) {
 		opts = append(opts, otlptracehttp.WithHeaders(t.Headers))
 	}
 	return opts
+}
+
+func (c Configuration) NewLogger(level zerolog.Level, override bool) zerolog.Logger {
+	var output io.Writer = os.Stdout
+
+	if c.Dev {
+		output = zerolog.ConsoleWriter{Out: os.Stdout}
+		zerolog.ErrorStackMarshaler = log.MarshalStackDev
+		if !override {
+			level = zerolog.TraceLevel
+		}
+	} else {
+		zerolog.ErrorStackMarshaler = log.MarshalStack
+	}
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+
+	return zerolog.New(output).Level(level).With().Timestamp().Logger()
 }

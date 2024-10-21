@@ -1,6 +1,10 @@
 package log
 
-import "github.com/mdobak/go-xerrors"
+import (
+	"os"
+
+	"github.com/mdobak/go-xerrors"
+)
 
 func marshalStack(err error, top bool) interface{} {
 	out := map[string]interface{}{}
@@ -40,4 +44,9 @@ func marshalStack(err error, top bool) interface{} {
 
 func MarshalStack(err error) interface{} {
 	return marshalStack(err, true)
+}
+
+func MarshalStackDev(err error) interface{} {
+	xerrors.Fprint(os.Stderr, err)
+	return nil
 }

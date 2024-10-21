@@ -2,7 +2,6 @@ package log
 
 import (
 	"context"
-	"os"
 
 	"github.com/rs/zerolog"
 )
@@ -28,14 +27,6 @@ func Ctx(ctx context.Context) *Logger {
 	return zerolog.Ctx(ctx)
 }
 
-func New(level Level) Logger {
-	return zerolog.New(os.Stdout).Level(level).With().Timestamp().Logger()
-}
-
 func Nop() Logger {
 	return zerolog.Nop()
-}
-
-func init() {
-	zerolog.ErrorStackMarshaler = MarshalStack
 }
