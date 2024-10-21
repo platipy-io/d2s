@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/platipy-io/d2s/internal/log"
+	"github.com/platipy-io/d2s/internal/telemetry"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
 
 type (
@@ -41,12 +41,12 @@ func New(path string) (config Configuration, err error) {
 	return
 }
 
-func (t Tracer) Opts() (opts []otlptracehttp.Option) {
+func (t Tracer) Opts() (opts []telemetry.TracerOption) {
 	if t.Endpoint != "" {
-		opts = append(opts, otlptracehttp.WithEndpointURL(t.Endpoint))
+		opts = append(opts, telemetry.WithEndpoint(t.Endpoint))
 	}
 	if len(t.Headers) != 0 {
-		opts = append(opts, otlptracehttp.WithHeaders(t.Headers))
+		opts = append(opts, telemetry.WithHeaders(t.Headers))
 	}
 	return opts
 }

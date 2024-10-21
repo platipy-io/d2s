@@ -63,15 +63,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if err := telemetry.InitTrace("d2s", conf.Tracer.Opts()...); err != nil {
+	provider, err := telemetry.NewTracerProvider("d2s", conf.Tracer.Opts()...)
+	if err != nil {
 		return err
 	}
 
 	logger := conf.NewLogger(logLevel.Level, logLevelFlag.Changed)
 
 	logger.Debug().Object("config", conf).Msg("dumping config")
-	opts := []http.ServerOption{http.WithLogger(logger),
-		http.WithHost(conf.Host), http.WithPort(conf.Port)}
+	opts := []http.ServerOption{http.WithTracerProvider(provider),
+		http.WithLogger(logger), http.WithHost(conf.Host), http.WithPort(conf.Port)}
 
 	err = http.ListenAndServe(opts...)
 	if errors.Is(err, http.ErrStopping) {

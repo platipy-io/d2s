@@ -21,6 +21,6 @@ func MiddlewareRecover(next http.Handler) http.Handler {
 
 var MiddlewareLogger = log.Middleware
 
-var MiddlewareOpenTelemetry = telemetry.MiddlewareTracing("server")
+var MiddlewareOpenTelemetry = telemetry.MiddlewareTracing
 
 var MiddlewareMetrics = telemetry.MiddlewareMetrics()

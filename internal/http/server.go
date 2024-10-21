@@ -13,20 +13,25 @@ import (
 	"github.com/heptiolabs/healthcheck"
 	"github.com/mdobak/go-xerrors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/platipy-io/d2s/app"
 	"github.com/platipy-io/d2s/app/lorem"
 	"github.com/platipy-io/d2s/internal/log"
+	"github.com/platipy-io/d2s/internal/telemetry"
 )
 
 var timeout = 30 * time.Second
 var ErrStarting = xerrors.Message("failed starting")
 var ErrStopping = xerrors.Message("failed stopping")
 
+type Middleware = func(http.Handler) http.Handler
+
 type serverConfig struct {
-	host   string
-	port   int
-	logger log.Logger
+	host           string
+	port           int
+	logger         log.Logger
+	tracerProvider *telemetry.TracerProvider
 }
 
 func (sc serverConfig) addr() string {
@@ -73,6 +78,13 @@ func WithPort(port int) ServerOption {
 	})
 }
 
+func WithTracerProvider(provider *telemetry.TracerProvider) ServerOption {
+	return ServerOptionFunc(func(sc serverConfig) serverConfig {
+		sc.tracerProvider = provider
+		return sc
+	})
+}
+
 func ListenAndServe(opts ...ServerOption) error {
 	router := chi.NewRouter()
 	errChan := make(chan error)
@@ -80,6 +92,15 @@ func ListenAndServe(opts ...ServerOption) error {
 	config := newServerConfig(opts)
 	logger := config.logger
 	server := http.Server{Addr: config.addr(), Handler: router}
+	middlewares := []Middleware{MiddlewareMetrics, MiddlewareLogger(logger), MiddlewareRecover}
+
+	if config.tracerProvider != nil {
+		tracerMiddleware := MiddlewareOpenTelemetry("server",
+			otelhttp.WithTracerProvider(config.tracerProvider))
+		endpoint := config.tracerProvider.Endpoint()
+		health.AddReadinessCheck("tracer", healthcheck.TCPDialCheck(endpoint, 5*time.Second))
+		middlewares = append([]Middleware{tracerMiddleware}, middlewares...)
+	}
 
 	go func() {
 		sigint := make(chan os.Signal, 1)
@@ -96,7 +117,7 @@ func ListenAndServe(opts ...ServerOption) error {
 	router.Handle("/metrics", promhttp.Handler())
 
 	router.Route("/", func(r chi.Router) {
-		r.Use(MiddlewareOpenTelemetry, MiddlewareMetrics, MiddlewareLogger(logger), MiddlewareRecover)
+		r.Use(middlewares...)
 		r.HandleFunc("/", app.Index)
 		r.HandleFunc("/lorem", lorem.Index)
 		r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
