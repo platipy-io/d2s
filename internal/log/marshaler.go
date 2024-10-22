@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
-	"go.uber.org/zap/zapcore"
 )
 
 type MarshalerFunc func(*zerolog.Event)
@@ -20,15 +19,6 @@ func mustRead(reader io.Reader) []byte {
 		panic(err)
 	}
 	return bytes
-}
-
-func StringArray(slice []string) zapcore.ArrayMarshaler {
-	return zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, s := range slice {
-			ae.AppendString(s)
-		}
-		return nil
-	})
 }
 
 func RequestHeaders(h http.Header) *zerolog.Event {
