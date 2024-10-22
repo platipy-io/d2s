@@ -10,8 +10,60 @@ templ BaseTplt(body templ.Component) {
 		<script src="https://unpkg.com/htmx.org@2.0.2"></script>
 		<script src="https://cdn.tailwindcss.com"></script>
 	</head>
-	<body class="flex items-center justify-center min-h-screen bg-gray-100">
-		<div>@body</div>
+	<body>
+		/* https://www.creative-tim.com/twcomponents/component/wireframe */
+		@header()
+		<main class="bg-slate-50">@body</main>
 	</body>
 	</html>
+}
+
+
+templ header() {
+	<header class="shadow-sm">
+		<div class="bg-blue-300 py-1"></div>
+		<nav class="flex items-center justify-between flex-wrap bg-white py-4 mx-auto px-8">
+			<div class="flex items-center flex-shrink-0 text-white mr-6">
+				<a class="text-white no-underline hover:text-white hover:no-underline pl-2" href="/">
+					<div class="h-8 bg-gray-500 w-16 block mx-auto rounded-sm"></div>
+				</a>
+			</div>
+
+			<div class="block lg:hidden">
+				<button id="nav-toggle" class="focus:outline-none">
+					<div class="h-1 bg-gray-300 w-8 mb-1 block mx-auto rounded-sm"></div>
+					<div class="h-1 bg-gray-300 w-8 mb-1 block mx-auto rounded-sm"></div>
+					<div class="h-1 bg-gray-300 w-8 mb-1 block mx-auto rounded-sm"></div>
+				</button>
+			</div>
+
+			<div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block pt-6 lg:pt-0" id="nav-content">
+				<ul class="list-reset lg:flex justify-end flex-1 items-center">
+					<li class="mr-3">
+						<a class="inline-block py-2 px-4 active:text-gray-900 no-underline" href="#">
+							<div class="h-2 bg-gray-400 w-16 mt-2 block mx-auto rounded-sm"></div>
+						</a>
+					</li>
+					<li class="mr-3">
+						<a class="inline-block text-gray-600 no-underline hover:text-gray-200 hover:text-underline py-2 px-4"
+							href="#">
+							<div class="h-2 bg-gray-400 w-16 mt-2 block mx-auto rounded-sm"></div>
+						</a>
+					</li>
+					<li class="mr-3">
+						<a class="inline-block text-gray-600 no-underline hover:text-gray-200 hover:text-underline py-2 px-4"
+							href="#">
+							<div class="h-2 bg-gray-400 w-16 mt-2 block mx-auto rounded-sm"></div>
+						</a>
+					</li>
+					<li class="mr-3">
+						<a class="inline-block text-gray-600 no-underline hover:text-gray-200 hover:text-underline py-2 px-4"
+							href="#">
+							<div class="h-2 bg-gray-400 w-16 mt-2 block mx-auto rounded-sm"></div>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</nav>
+	</header>
 }

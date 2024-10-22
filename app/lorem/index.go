@@ -9,7 +9,7 @@ import (
 func Index(w http.ResponseWriter, r *http.Request) {
 	component := IndexTplt()
 	if _, ok := r.Header["Hx-Request"]; !ok {
-		component = app.BaseTplt(app.IndexTplt("John", component))
+		component = app.BaseTplt(app.IndexTplt(component))
 	}
 	component.Render(r.Context(), w)
 }

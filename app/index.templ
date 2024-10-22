@@ -1,13 +1,25 @@
 package app
 
-templ IndexTplt(name string, wrapped templ.Component) {
-	<h1 class="text-3xl font-bold text-gray-800 text-center">Hello, { name }!</h1>
-	if wrapped != nil {
-		@wrapped
-	} else {
-		<a hx-get="/lorem" hx-push-url="true" class="font-medium text-blue-600 dark:text-blue-500 hover:underline cursor-pointer" hx-swap="outerHTML">
-			Go to Lorem
-		</a>
-	}
-}
+templ IndexTplt(wrapped templ.Component) {
+	<div class="min-h-screen">
+		<section class="container mx-auto flex md:px-24 md:py-10 md:flex-row flex-col items-center">
+			<div
+				class="lg:flex-grow mt-5 md:mt-0   md:w-1.5/2 lg:pr-24 md:pr-16 flex flex-col md:items-start md:text-left mb-16 md:mb-0 items-center text-center h-[14rem]">
+				<h1 class="h-12 bg-gray-500 w-3/6 block rounded-sm mb-3"></h1>
 
+				<p class="mb-1 md:pl-0 h-4 pl-2 pr-2 bg-gray-400 w-5/6 leading-relaxed rounded-sm"></p>
+				<p class="mb-8 md:pl-0 h-4 pl-2 pr-2 bg-gray-400 w-[32rem] leading-relaxed rounded-sm"></p>
+				if wrapped != nil {
+					@wrapped
+				} else {
+					<div class="flex justify-center" id="wrapped">
+						<a hx-get="/lorem" hx-push-url="true" hx-swap="outerHTML" hx-target="#wrapped"
+							class="inline-flex rounded-sm h-11 w-48 px-4 bg-green-300 hover:bg-green-400" href="#"></a>
+						<a href="#" class="inline-flex rounded-sm h-11 w-[8rem] ml-4 px-4 bg-gray-200 hover:bg-gray-300"></a>
+					</div>
+				}
+			</div>
+			<div class="lg:max-w-lg lg:w-full mb-5 md:mb-0 md:w-1/2 w-3/6 h-[32rem] bg-gray-200 rounded-md"></div>
+		</section>
+	</div>
+}
